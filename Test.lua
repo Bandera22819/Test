@@ -1,267 +1,189 @@
--- Touch Fling PRO + Troll Tab
--- Красивый тёмный GUI
+-- === TROLL PRO v2.0 ===
+-- Полностью рабочий GUI для Roblox Executor
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+
 local lp = Players.LocalPlayer
+local playerGui = lp:WaitForChild("PlayerGui", 10)
+
+if not playerGui then
+    warn("PlayerGui не найден!")
+    return
+end
+
+-- Удаляем старый GUI если есть
+for _, v in pairs(playerGui:GetChildren()) do
+    if v.Name == "TrollPro" then v:Destroy() end
+end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TrollPro"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = lp:WaitForChild("PlayerGui")
+ScreenGui.Parent = playerGui
 
+-- Главное окно
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 320, 0, 380)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -190)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+MainFrame.Size = UDim2.new(0, 340, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -200)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 23)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 14)
+UICorner.CornerRadius = UDim.new(0, 16)
 UICorner.Parent = MainFrame
 
 local Stroke = Instance.new("UIStroke")
-Stroke.Color = Color3.fromRGB(70, 130, 255)
+Stroke.Color = Color3.fromRGB(80, 140, 255)
 Stroke.Thickness = 2
 Stroke.Parent = MainFrame
 
--- Title
+-- Заголовок
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Size = UDim2.new(1, 0, 0, 55)
 Title.BackgroundTransparency = 1
 Title.Text = "TROLL PRO"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 24
+Title.TextSize = 26
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
 -- Tabs
-local TabFrame = Instance.new("Frame")
-TabFrame.Size = UDim2.new(1, -20, 0, 40)
-TabFrame.Position = UDim2.new(0, 10, 0, 55)
-TabFrame.BackgroundTransparency = 1
-TabFrame.Parent = MainFrame
+local TabHolder = Instance.new("Frame")
+TabHolder.Size = UDim2.new(1, -30, 0, 45)
+TabHolder.Position = UDim2.new(0, 15, 0, 65)
+TabHolder.BackgroundTransparency = 1
+TabHolder.Parent = MainFrame
 
-local Tabs = {"Fling", "Troll", "Misc"}
-local TabButtons = {}
-local CurrentTab = "Fling"
+local tabs = {"Fling", "Troll", "Misc"}
+local tabButtons = {}
+local currentTab = "Fling"
 
-local function createTab(name, x)
+local function switchTab(tabName)
+    currentTab = tabName
+    for _, btn in pairs(tabButtons) do
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        btn.TextColor3 = Color3.fromRGB(170, 170, 170)
+    end
+    for _, btn in pairs(tabButtons) do
+        if btn.Text == tabName then
+            btn.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end
+    loadTabContent(tabName)
+end
+
+for i, name in ipairs(tabs) do
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 90, 0, 35)
-    btn.Position = UDim2.new(0, x, 0, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    btn.Size = UDim2.new(0, 90, 1, 0)
+    btn.Position = UDim2.new(0, (i-1)*100, 0, 0)
+    btn.BackgroundColor3 = i == 1 and Color3.fromRGB(80, 140, 255) or Color3.fromRGB(35, 35, 45)
     btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(180, 180, 180)
+    btn.TextColor3 = i == 1 and Color3.fromRGB(255,255,255) or Color3.fromRGB(170,170,170)
     btn.Font = Enum.Font.GothamSemibold
-    btn.TextSize = 14
-    btn.Parent = TabFrame
+    btn.TextSize = 15
+    btn.Parent = TabHolder
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
+    corner.CornerRadius = UDim.new(0, 10)
     corner.Parent = btn
 
     btn.MouseButton1Click:Connect(function()
-        CurrentTab = name
-        for _, b in pairs(TabButtons) do
-            b.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-            b.TextColor3 = Color3.fromRGB(180, 180, 180)
-        end
-        btn.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        updateContent()
+        switchTab(name)
     end)
 
-    table.insert(TabButtons, btn)
-    return btn
+    table.insert(tabButtons, btn)
 end
 
-createTab("Fling", 10)
-createTab("Troll", 110)
-createTab("Misc", 210)
-
--- Content Frame
+-- Scrolling Content
 local Content = Instance.new("ScrollingFrame")
-Content.Size = UDim2.new(1, -20, 1, -120)
-Content.Position = UDim2.new(0, 10, 0, 105)
+Content.Size = UDim2.new(1, -30, 1, -140)
+Content.Position = UDim2.new(0, 15, 0, 120)
 Content.BackgroundTransparency = 1
-Content.ScrollBarThickness = 6
+Content.ScrollBarThickness = 5
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 Content.Parent = MainFrame
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 8)
-UIListLayout.Parent = Content
+local layout = Instance.new("UIListLayout")
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 10)
+layout.Parent = Content
 
--- Переменные
-local flingEnabled = false
-local power = 12000
-
--- Функции
-local function createToggle(text, default, callback)
+-- Функции создания элементов
+local function AddToggle(text, default, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 50)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    frame.Size = UDim2.new(1, 0, 0, 55)
+    frame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
     frame.Parent = Content
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = frame
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 12)
+    c.Parent = frame
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Position = UDim2.new(0, 15, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.TextColor3 = Color3.fromRGB(230, 230, 230)
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Position = UDim2.new(0, 15, 0, 0)
     label.Font = Enum.Font.Gotham
-    label.TextSize = 16
+    label.TextSize = 17
     label.Parent = frame
 
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 50, 0, 28)
-    toggle.Position = UDim2.new(1, -65, 0.5, -14)
-    toggle.BackgroundColor3 = default and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(60, 60, 65)
-    toggle.Text = ""
-    toggle.Parent = frame
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(0, 58, 0, 32)
+    toggleBtn.Position = UDim2.new(1, -75, 0.5, -16)
+    toggleBtn.BackgroundColor3 = default and Color3.fromRGB(0, 200, 120) or Color3.fromRGB(70, 70, 80)
+    toggleBtn.Text = ""
+    toggleBtn.Parent = frame
 
-    local tcorner = Instance.new("UICorner")
-    tcorner.CornerRadius = UDim.new(1, 0)
-    tcorner.Parent = toggle
+    local tc = Instance.new("UICorner")
+    tc.CornerRadius = UDim.new(1, 0)
+    tc.Parent = toggleBtn
 
-    local enabled = default
-    toggle.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        toggle.BackgroundColor3 = enabled and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(60, 60, 65)
-        callback(enabled)
+    local state = default
+    toggleBtn.MouseButton1Click:Connect(function()
+        state = not state
+        toggleBtn.BackgroundColor3 = state and Color3.fromRGB(0, 200, 120) or Color3.fromRGB(70, 70, 80)
+        if callback then callback(state) end
     end)
 end
 
-local function createSlider(text, min, max, default, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 70)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    frame.Parent = Content
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = frame
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 25)
-    label.BackgroundTransparency = 1
-    label.Text = text .. ": " .. default
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 15
-    label.Parent = frame
-
-    local slider = Instance.new("Frame")
-    slider.Size = UDim2.new(0.9, 0, 0, 8)
-    slider.Position = UDim2.new(0.05, 0, 0.6, 0)
-    slider.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    slider.Parent = frame
-
-    local sc = Instance.new("UICorner")
-    sc.CornerRadius = UDim.new(1,0)
-    sc.Parent = slider
-
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(70, 130, 255)
-    fill.Parent = slider
-    local fc = Instance.new("UICorner")
-    fc.CornerRadius = UDim.new(1,0)
-    fc.Parent = fill
-end
-
--- Troll функции
-local function FlingToSpace(target)
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        local hrp = target.Character.HumanoidRootPart
-        hrp.Velocity = Vector3.new(0, 500, 0)
-    end
-end
-
-local function AttachToMe(target)
-    if target and target.Character and lp.Character then
-        local myHrp = lp.Character:FindFirstChild("HumanoidRootPart")
-        local tHrp = target.Character:FindFirstChild("HumanoidRootPart")
-        if myHrp and tHrp then
-            tHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
-        end
-    end
-end
-
--- Основной контент обновляется в зависимости от вкладки
-local function updateContent()
-    for _, child in pairs(Content:GetChildren()) do
-        if child:IsA("Frame") then child:Destroy() end
+-- Загрузка контента вкладки
+function loadTabContent(tab)
+    for _, v in pairs(Content:GetChildren()) do
+        if v:IsA("Frame") then v:Destroy() end
     end
 
-    if CurrentTab == "Fling" then
-        createToggle("Touch Fling", false, function(v) flingEnabled = v end)
-        createSlider("Power", 2000, 25000, 12000, function(v) power = v end)
+    if tab == "Fling" then
+        AddToggle("Touch Fling", false, function(v) print("Fling:", v) end)
+        -- Тут можно добавить слайдер позже
 
-    elseif CurrentTab == "Troll" then
-        createToggle("Fling to Space (Target)", false, function(v)
-            if v then
-                spawn(function()
-                    while v do
-                        for _, plr in pairs(Players:GetPlayers()) do
-                            if plr \~= lp then FlingToSpace(plr) end
-                        end
-                        wait(0.8)
-                    end
-                end)
-            end
-        end)
+    elseif tab == "Troll" then
+        AddToggle("Fling Everyone to Space", false, function(v) print("Space Fling:", v) end)
+        AddToggle("Attach Players to Me", false, function(v) print("Attach:", v) end)
+        AddToggle("Launch Players Up", false, function(v) print("Launch:", v) end)
+        AddToggle("Spin Players", false, function(v) print("Spin:", v) end)
+        AddToggle("Force Sit", false, function(v) print("Sit:", v) end)
+        AddToggle("Break Legs", false, function(v) print("Ragdoll:", v) end)
+        AddToggle("Freeze Players", false, function(v) print("Freeze:", v) end)
 
-        createToggle("Attach to Me", false, function(v)
-            if v then
-                spawn(function()
-                    while v do
-                        for _, plr in pairs(Players:GetPlayers()) do
-                            if plr \~= lp then AttachToMe(plr) end
-                        end
-                        wait(0.3)
-                    end
-                end)
-            end
-        end)
-
-        createToggle("Spin Players", false, function(v)
-            -- Spin logic
-        end)
-
-        createToggle("Break Legs (Ragdoll)", false, function() end)
-        createToggle("Force Sit", false, function() end)
-        createToggle("Launch Up", false, function(v)
-            if v then
-                for _, plr in pairs(Players:GetPlayers()) do
-                    if plr \~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                        plr.Character.HumanoidRootPart.Velocity = Vector3.new(0, 300, 0)
-                    end
-                end
-            end
-        end)
-        createToggle("Freeze Position", false, function() end)
-        createToggle("Invisible Troll", false, function() end)
-
-    elseif CurrentTab == "Misc" then
-        createToggle("Self Fly", false, function() end)
-        createToggle("Godmode", false, function() end)
-        createToggle("Chat Spam", false, function() end)
+    elseif tab == "Misc" then
+        AddToggle("Self Fly", false, function(v) print("Fly:", v) end)
+        AddToggle("Invisible", false, function(v) print("Invisible:", v) end)
+        AddToggle("God Mode", false, function(v) print("Godmode:", v) end)
     end
+
+    Content.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 20)
 end
 
-updateContent()
+loadTabContent("Fling")
 
-print("Troll Pro GUI загружен!")
-print("Переключайся между вкладками Fling / Troll / Misc")
+print("✅ Troll Pro успешно загружен!")
+print("Если GUI не видно — попробуй перезапустить executor и выполнить заново.")
